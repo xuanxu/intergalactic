@@ -35,7 +35,7 @@ def tau_polinomyal_coefficients(z):
     return [a0, a1, a2]
 
 
-def stellar_lifetime(stellar_m, z):
+def new_stellar_lifetime(stellar_m, z):
     """
     Empirical formula for stellar lifetimes from
     Raiteri C.M., Villata M. & Navarro J.F., 1996, A&A 315, 105-115
@@ -49,7 +49,7 @@ def stellar_lifetime(stellar_m, z):
     return math.pow(10, log_tau - 9)
 
 
-def stellar_mass(tau, z):
+def new_stellar_mass(tau, z):
     """
     Derived from the stellar lifetimes formula from
     Raiteri C.M., Villata M. & Navarro J.F., 1996, A&A 315, 105-115
@@ -200,3 +200,45 @@ def imf_supernovas_II(m, imf, binary_fraction=constants.BIN_FRACTION):
         return (imf_zero(m, imf, binary_fraction) + imf_binary_primary(m, imf, binary_fraction)) / m
     else:
         return 0
+
+def stellar_mass(lifetime, z):
+    if lifetime > 15.13 : return None
+    if lifetime < 3.325e-3 : return 100.
+    ltau = 9 + math.log10(lifetime)
+    if ltau <= 6.48 : return 100.
+    ltau = min([ltau, 10.18])
+    if z < 0.00025:
+        a = [-16.1673, 8.1573, -1.51164, 0.119703, -3.2797e-3]
+    elif 0.00025 <= z < 0.00126:
+        a = [-18.18504, 9.132649, -1.68782, 0.133889, -3.71372e-3]
+    elif 0.00126 <= z < 0.0056:
+        a = [-25.38213, 12.52873, -2.282687, 0.1799017, -5.049336e-3]
+    elif 0.0056 <= z < 0.0126:
+        a = [-26.24297, 12.86747, -2.330858, 0.1829501, -5.130008e-3]
+    elif 0.0126 <= z:
+        a = [-25.09745, 12.14146, -2.170348, 0.1681194, -4.645682e-3]
+    p = a[0] + a[1] * ltau + a[2] * (ltau ** 2) + a[3] * (ltau ** 3) + a[4] * (ltau ** 4)
+    return value_in_interval(1 / p, [0.15, 100.0])
+
+
+def stellar_lifetime(stellar_m, z):
+    if stellar_m <= 0.15 : stellar_m = 0.15
+    x = 1 / stellar_m
+
+    if stellar_m > 100:
+        a = [6.48, 0, 0, 0, 0]
+    elif z < 0.00025:
+        a = [6.4976, 11.103, -20.424, 18.792, -6.1625]
+    elif 0.00025 <= z < 0.00126:
+        a = [6.4899, 11.327, -21.124, 19.818, -6.6490]
+    elif 0.00126 <= z < 0.0056:
+        a = [6.4711, 11.776, -22.155, 21.184, -7.3164]
+    elif 0.0056 <= z < 0.0126:
+        a = [6.4572, 11.889, -22.139, 21.297, -7.4748]
+    elif 0.0126 <= z:
+        a = [6.4326, 11.676, -20.353, 18.775, -6.4300]
+
+    ltau = a[0] + a[1] * x + a[2] * (x ** 2) + a[3] * (x ** 3) + a[4] * (x ** 4)
+    ltau = value_in_interval(ltau, [6.48, 10.18])
+
+    return (10 ** ltau) / 1.e9
